@@ -8,6 +8,14 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 REQUIRED_LABELS = ["[HEADLINE]", "[SUBHEADLINE]", "[BODY]", "[CTA]", "[HASHTAGS]"]
 PROMPT_INPUT_VARIABLES = ["product_specs", "discount", "theme", "channel", "tone", "user_name"]
 
+# Generation hyperparameters — tune these to trade off coherence vs creativity
+_MAX_NEW_TOKENS = 260
+_TEMPERATURE = 0.3
+_TOP_P = 0.9
+_REPETITION_PENALTY = 1.15
+_NO_REPEAT_NGRAM_SIZE = 4
+_PERFECT_SCORE = len(REQUIRED_LABELS)
+
 DEFAULT_SYSTEM_MSG = """
 You are an advertising specialist for BikeEase (bike rental).
 Write ONE short ad.
@@ -87,12 +95,12 @@ class AdGenerator:
         with torch.no_grad():
             out = self.model.generate(
                 **inputs,
-                max_new_tokens=260,
+                max_new_tokens=_MAX_NEW_TOKENS,
                 do_sample=True,
-                temperature=0.3,
-                top_p=0.9,
-                repetition_penalty=1.15,
-                no_repeat_ngram_size=4,
+                temperature=_TEMPERATURE,
+                top_p=_TOP_P,
+                repetition_penalty=_REPETITION_PENALTY,
+                no_repeat_ngram_size=_NO_REPEAT_NGRAM_SIZE,
                 eos_token_id=self.tok.eos_token_id,
                 pad_token_id=self.tok.pad_token_id,
             )
@@ -149,7 +157,7 @@ class AdGenerator:
 
             if best is None or candidate["checks"]["score"] > best["checks"]["score"]:
                 best = candidate
-            if checks["score"] == 3:
+            if checks["score"] == _PERFECT_SCORE:
                 break
 
         return best
